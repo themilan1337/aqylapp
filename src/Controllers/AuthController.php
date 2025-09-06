@@ -284,6 +284,7 @@ class AuthController extends BaseController {
                 $teacher->email = $userInfo->email;
                 $teacher->picture = $userInfo->picture ?? '';
                 $teacher->school = '';
+                $teacher->specialization = '';
                 $teacher->join_date = date('Y-m-d H:i:s');
                 R::store($teacher);
 

@@ -541,6 +541,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'users' => $users
         ]);
     }
@@ -560,6 +561,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'student' => $student
         ]);
     }
@@ -579,6 +581,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'teacher' => $teacher
         ]);
     }
@@ -600,6 +603,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'bannedUsers' => $bannedUsers
         ]);
     }
@@ -630,6 +634,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'quizzes' => $quizzes
         ]);
     }
@@ -650,6 +655,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'categories' => $categories,
             'subCategories' => $subCategories
         ]);
@@ -693,6 +699,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'quiz' => $quiz[0],
             'questions' => $questions,
             'categories' =>  $categories,
@@ -718,6 +725,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'categories' => $categories
         ]);
     }
@@ -734,7 +742,8 @@ class HomeController extends BaseController {
             'lang' => $this->lang,
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
-            'domain' => $_ENV['ROOT_URL']
+            'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email
         ]);
     }
 
@@ -755,6 +764,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'category' => $category
         ]);
     }
@@ -774,6 +784,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'subCategories' => $subCategories
         ]);
     }
@@ -790,7 +801,8 @@ class HomeController extends BaseController {
             'lang' => $this->lang,
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
-            'domain' => $_ENV['ROOT_URL']
+            'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email
         ]);
     }
 
@@ -811,6 +823,7 @@ class HomeController extends BaseController {
             'APP_NAME' => $_ENV['APP_NAME'],
             'ROOT_URL' => $root,
             'domain' => $_ENV['ROOT_URL'],
+            'fullname' => $user->email,
             'subCategory' => $category
         ]);
     }
