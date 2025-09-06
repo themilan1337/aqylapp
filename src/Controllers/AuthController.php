@@ -263,11 +263,14 @@ class AuthController extends BaseController {
                 $oauth2 = new \Google_Service_Oauth2($client);
                 $userInfo = $oauth2->userinfo->get();
                 
-                if (!$userInfo->email || !$userInfo->name) {
-                    error_log('Incomplete user info from Google OAuth');
+                if (!$userInfo->email) {
+                    error_log('Incomplete user info from Google OAuth - missing email');
                     header('Location: /auth/teacher/auth?error=incomplete_profile');
                     return;
                 }
+                
+                // Use email as name if name is not provided
+                $userName = $userInfo->name ?: $userInfo->email;
             } catch (Exception $e) {
                 error_log('OAuth exception: ' . $e->getMessage());
                 header('Location: /auth/teacher/auth?error=oauth_exception');
@@ -277,9 +280,9 @@ class AuthController extends BaseController {
             $teacher = R::findOne('teachers', 'email = ?', [$userInfo->email]);
             if (!$teacher) {
                 $teacher = R::dispense('teachers');
-                $teacher->name = $userInfo->name;
+                $teacher->name = $userName;
                 $teacher->email = $userInfo->email;
-                $teacher->picture = $userInfo->picture;
+                $teacher->picture = $userInfo->picture ?? '';
                 $teacher->school = '';
                 $teacher->join_date = date('Y-m-d H:i:s');
                 R::store($teacher);

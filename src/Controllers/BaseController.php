@@ -47,22 +47,27 @@ class BaseController {
         if ($userData['isStudent'] == true) {
             if (!$userData || (!isset($userData['google_id']))) {
                 header('Location: /auth/signup');
+                return;
             }
     
             $this->user = R::findOne('users', 'google_id = ?', [$userData['google_id']]);
             if (!$this->user) {
                 header('Location: /auth/signup');
+                return;
             }
 
             if ($this->user->token_confirmed == 0 || $this->user->token_confirmed == -1) {
                 if ($userData['register'] == true) {
                     header('Location: /auth/student/complete');
+                    return;
                 } else if ($_SERVER['REQUEST_URI'] != '/confirmation') {
                     header('Location: /confirmation');
+                    return;
                 }
             }
         } else {
             header('Location: /');
+            return;
         }
     }
 
@@ -82,6 +87,7 @@ class BaseController {
         $this->user = R::findOne('teachers', 'id = ?', [$userData['id']]);
         if (!$this->user) {
             header('Location: /auth/teacher/auth');
+            return;
         }
     }
 
