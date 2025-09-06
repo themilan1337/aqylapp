@@ -1,0 +1,134 @@
+# Comprehensive Guide to Fixing the PHP Errors in AqylApp
+
+This guide addresses the specific errors from your Apache error logs for the AqylApp project deployed on Ubuntu 25.04 with PHP 8.x, Apache 2.4, and MariaDB 10.x. The errors fall into two categories: **PHP warnings** (non-fatal, but they indicate potential bugs and can clutter logs) and a **PHP fatal error** (which crashes the script execution). These are common in PHP 8+ due to stricter type handling and undefined access warnings.
+
+The warnings suggest type mismatches (treating arrays as objects) and missing keys, likely from handling user data (e.g., from Google OAuth or database queries). The fatal error is a database insertion issue using RedBeanPHP ORM (from the trace in `/vendor/gabordemooij/redbean/`).
+
+**Assumptions and Prerequisites:**
+- The project is at `/var/www/aqylapp/` (based on error paths; adjust if different).
+- You're using the "ubuntu" branch or equivalent.
+- You have access to edit files (e.g., via `nano` or VS Code).
+- Back up files before editing: `cp /var/www/aqylapp/src/Controllers/HomeController.php /var/www/aqylapp/src/Controllers/HomeController.php.bak`.
+- Test changes in a development environment (set `APP_ENV="development"` in `/src/.env` for better error reporting).
+- Restart Apache after changes: `sudo systemctl restart apache2`.
+- Reproduce errors by accessing the relevant pages (e.g., https://aqyl.app/, /select) and check logs: `sudo tail -f /var/log/apache2/aqylapp_error.log`.
+- If using Composer, run `composer update` after fixes if dependencies change, but avoid upgrading PHP or libraries unless specified.
+
+I'll break this down by error type, explain the cause, and provide step-by-step fixes. Since I can't access your exact code (repo may be private or not fully indexed), fixes are based on line numbers and common patterns. Open `/var/www/aqylapp/src/Controllers/HomeController.php` in an editor to locate the exact variables.
+
+## 1. Fixing PHP Warnings: Attempt to Read Property on Array
+These occur when code uses object notation (`->`) on an array (e.g., `$user->id` where `$user` is an array like `['id' => 123]`). This is common with API responses (e.g., Google OAuth returns arrays) or database fetches set to PDO::FETCH_ASSOC.
+
+Affected lines in `HomeController.php`:
+- Line 830: "id"
+- Line 179: "id"
+- Line 195: "id"
+- Line 211: "name"
+- Line 212: "firstname"
+- Line 213: "picture"
+
+**Cause:** Likely in methods handling user authentication or profile data (e.g., Google login callback). The data source returns an array, but the code assumes an object (e.g., a RedBeanPHP "bean" or stdClass).
+
+**Steps to Fix:**
+1. Open the file: `nano /var/www/aqylapp/src/Controllers/HomeController.php`.
+2. Go to each line (use Ctrl+W in nano to search).
+3. Replace object access (`$var->property`) with array access (`$var['property']`).
+   - Example: Change `$user->id = ...;` to `$user['id'] = ...;` (adjust `$user` to the actual variable name, e.g., `$googleUser`, `$sessionUser`).
+   - If assigning or comparing, ensure safe access: `$id = $var['id'] ?? null;`
+4. Specific fixes based on lines:
+   - **Line 830, 179, 195 ("id"):** These may be in user ID checks or session setup. Change `$someVar->id` to `$someVar['id'] ?? 0` (use 0 or null as fallback based on context).
+   - **Line 211 ("name"):** Likely full name from Google. Change to `$someVar['name'] ?? ''`.
+   - **Line 212 ("firstname"):** First name. Change to `$someVar['firstname'] ?? ''`.
+   - **Line 213 ("picture"):** Profile picture URL. Change to `$someVar['picture'] ?? ''`.
+5. If the variable should be an object, cast it earlier: `$user = (object) $user;`. But prefer array access for consistency.
+6. Save and test. If the data comes from Google OAuth:
+   - Check the auth library (e.g., in `composer.json`, likely `league/oauth2-google` or similar).
+   - In the callback method, ensure `$user = $provider->getResourceOwner($token);` returns an array, and handle accordingly.
+7. To suppress warnings temporarily (not recommended long-term): Add `@` before the access, e.g., `@$var->id`, but fix the root cause.
+
+**Verification:** Access the page (e.g., after login). If warnings persist, var_dump the variable before the line: `var_dump($var); die();` to confirm type (array vs. object).
+
+## 2. Fixing PHP Warnings: Undefined Array Key
+These happen when accessing a non-existent key in an array (e.g., `$array['key']` where 'key' is missing). PHP 8+ warns on this.
+
+Affected:
+- Line 842 in `HomeController.php`: "invite_code"
+- Line 387 in Latte eval'd code (template): "picture"
+
+**Cause:** 
+- For "invite_code": Likely optional field in user data or form input, not always set.
+- For "picture": In a Latte template (e.g., `/views/home.latte` or `/views/student.latte`), rendering `$user.picture` or similar, but 'picture' is missing (e.g., no profile pic from Google).
+
+**Steps to Fix "invite_code" (Line 842):**
+1. Open `HomeController.php`.
+2. At line 842, wrap the access: Change `$var['invite_code']` to `$var['invite_code'] ?? null` (or '' if string expected).
+   - Example: If it's `$invite = $_SESSION['user']['invite_code'];`, change to `$invite = $_SESSION['user']['invite_code'] ?? '';`.
+3. If it's in a condition: `if (isset($var['invite_code'])) { ... }`.
+4. Save and test.
+
+**Steps to Fix "picture" in Latte Template:**
+1. Identify the template: The error is in eval'd code from Latte Engine (line 387 likely refers to the compiled template). Search project for the source view file using "picture" (e.g., `grep -r "picture" /var/www/aqylapp/views/`).
+   - Common files: `/views/home.latte`, `/views/select.latte`, or `/views/profile.latte`.
+2. Open the file: e.g., `nano /var/www/aqylapp/views/home.latte`.
+3. Find the reference to "picture" (e.g., `<img src="{$user.picture}">` or `{if $user.picture}...`).
+4. Use safe access in Latte: Change to `{$user.picture|default:''}` or `{ifset $user.picture}<img src="{$user.picture}">{/ifset}`.
+   - If $user is object in template but array in controller, ensure consistency (pass as array or cast).
+5. If the template expects an object, in the controller's render method: `$this->view->user = (object) $user;`.
+6. Clear Latte cache if exists: `rm -rf /var/www/aqylapp/temp/cache/latte/*` (adjust path if custom).
+7. Save and test.
+
+**Verification:** Reload the page. Use `var_dump($var);` in controller to check keys.
+
+## 3. Fixing the PHP Fatal Error: Field 'school' Doesn't Have a Default Value
+This is a MySQL error (SQLSTATE[HY000]: 1364) during insertion. RedBeanPHP is trying to insert a row (via `R::store($bean)`) without providing a value for the 'school' column, which is NOT NULL and has no default.
+
+**Cause:** Likely in user registration or profile creation (e.g., after Google login, creating a new user record). The 'school' field is required in the DB schema but not set in code.
+
+**Steps to Fix:**
+1. **Get Full Stack Trace for Exact Location:**
+   - Set `APP_ENV="development"` in `/src/.env`.
+   - Reproduce the error (e.g., try registering or logging in).
+   - Check logs for full trace: `sudo tail -n 50 /var/log/apache2/aqylapp_error.log`. Look for the app code line calling RedBean (e.g., in HomeController or another file like UserModel.php).
+   - If trace is still truncated, add error reporting: At top of `HomeController.php`, add `ini_set('display_errors', 1); error_reporting(E_ALL);`.
+
+2. **Option 1: Set 'school' in Code (Recommended - Keeps Data Integrity):**
+   - Once you have the trace, go to the app line (e.g., in HomeController, a method like `registerUser()` or `handleCallback()`).
+   - Find `R::store($bean);` or similar (RedBean "bean" is like a row object).
+   - Before store, set: `$bean->school = 'default_school';` (or from user input, e.g., `$bean->school = $_POST['school'] ?? 'Unknown';`).
+   - If from Google OAuth, perhaps prompt user for school on first login (add a form step).
+   - Example code snippet to add:
+     ```
+     $userBean = R::dispense('users'); // Assuming table is 'users'
+     $userBean->email = $googleUser['email'];
+     // ... other fields
+     $userBean->school = 'Default School'; // Or dynamic value
+     R::store($userBean);
+     ```
+   - Search project for 'school': `grep -r "school" /var/www/aqylapp/src/`.
+
+3. **Option 2: Alter Database to Add Default Value (Quick Fix - If 'school' Can Be Optional):**
+   - Log into MariaDB: `mysql -u your_db_user -p your_database_name`.
+   - Identify the table (likely 'user' or 'student'; check schema in `/sql/init.sql` or run `SHOW TABLES;` then `DESCRIBE users;`).
+   - Alter the column: `ALTER TABLE users MODIFY school VARCHAR(255) DEFAULT 'Unknown';` (adjust type/length from your schema).
+   - Exit: `EXIT;`.
+   - This allows inserts without 'school', defaulting to 'Unknown'.
+
+4. **Prevent Future Issues:**
+   - In RedBean setup (likely in a bootstrap file like `/src/app.php` or DB connection), ensure strict mode is handled.
+   - Add validation before store: If 'school' is required, check `if (empty($bean->school)) { throw new Exception('School required'); }`.
+   - Update SQL script in `/sql/` to include default if re-importing DB.
+
+**Verification:** Reproduce the action causing the fatal (e.g., new user creation). If fixed, no crash; check DB for inserted row: `SELECT * FROM users;` in MariaDB.
+
+## Additional Best Practices and Troubleshooting
+- **Suppress All Warnings Temporarily:** In `/src/.env`, add `error_reporting = E_ALL & ~E_WARNING` (not recommended for production).
+- **Update Dependencies:** Run `cd /var/www/aqylapp && composer update` to ensure RedBeanPHP and Latte are compatible with PHP 8.4.
+- **Debug Tools:** Install Xdebug: `sudo apt install php8.4-xdebug`, configure in `/etc/php/8.4/apache2/php.ini` with `xdebug.mode=debug`, then use a debugger like VS Code.
+- **If Errors Persist:** 
+  - Check PHP version: `php -v` (ensure 8.x).
+  - Clear caches: Composer (`composer clear-cache`), Latte (as above), OPCache (`sudo systemctl restart apache2`).
+  - Search for similar issues: Google "PHP attempt to read property on array RedBeanPHP" or "Field doesn't have default value RedBean".
+- **Security Note:** Since this involves user data and OAuth, ensure inputs are sanitized (RedBean escapes SQL, but validate user input).
+- **Production Readiness:** Once fixed, set `APP_ENV="production"` and monitor logs.
+
+If these fixes don't resolve (e.g., need exact variable names), provide the code snippets around the error lines or full stack trace for more precise help. Test thoroughly after changes!

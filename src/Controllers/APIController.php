@@ -302,7 +302,7 @@ class APIController extends BaseController {
         try {
             $res = R::exec(
                 'DELETE FROM teachers WHERE id = ?',
-                [$this->user['id']]
+                [is_array($this->user) ? ($this->user['id'] ?? null) : ($this->user->id ?? null)]
             );
 
             if ($res == 0) {
@@ -339,7 +339,7 @@ class APIController extends BaseController {
             try {
                 $res = R::exec(
                     'UPDATE teachers SET lang = ? WHERE id = ?',
-                    [$params['data']['lang'], $this->user['id']]
+                    [$params['data']['lang'], is_array($this->user) ? ($this->user['id'] ?? null) : ($this->user->id ?? null)]
                 );
     
                 if ($res == 0) {
@@ -358,7 +358,7 @@ class APIController extends BaseController {
             try {
                 $res = R::exec(
                     'UPDATE teachers SET token = ? WHERE id = ?',
-                    [$params['data']['token'], $this->user['id']]
+                    [$params['data']['token'], is_array($this->user) ? ($this->user['id'] ?? null) : ($this->user->id ?? null)]
                 );
         
                 if ($res == 0) {
@@ -456,7 +456,8 @@ class APIController extends BaseController {
             return;
         }
 
-        if ($student->id != $this->user['id']) {
+        $userIdToCheck = is_array($this->user) ? ($this->user['id'] ?? null) : ($this->user->id ?? null);
+        if ($student->id != $userIdToCheck) {
             http_response_code(403);
             echo json_encode(['error' => 'Access denied']);
             return;

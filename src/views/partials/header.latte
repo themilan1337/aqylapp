@@ -163,7 +163,7 @@
           
           <div class="relative font-['Inter'] font-normal ">
             <div id="profileButton" class="w-10 h-10 rounded-full bg-orange-200 overflow-hidden cursor-pointer">
-              <img src="{$picture}" alt="Profile" class="w-full h-full object-cover">
+              <img src="{$picture|default:''}" alt="Profile" class="w-full h-full object-cover">
             </div>
             
             <div id="profileDropdown" class="absolute right-0 mt-2 border z-50 w-48 bg-white rounded-lg shadow-lg py-2 hidden opacity-0 transform -translate-y-2 transition-all duration-300">

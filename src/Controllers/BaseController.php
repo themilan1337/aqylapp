@@ -54,7 +54,7 @@ class BaseController {
                 header('Location: /auth/signup');
             }
 
-            if ($this->user['token_confirmed'] == 0 || $this->user['token_confirmed'] == -1) {
+            if ($this->user->token_confirmed == 0 || $this->user->token_confirmed == -1) {
                 if ($userData['register'] == true) {
                     header('Location: /auth/student/complete');
                 } else if ($_SERVER['REQUEST_URI'] != '/confirmation') {
@@ -99,7 +99,8 @@ class BaseController {
     }
 
     protected function validateOwnership($userId) {
-        if ($this->user['id'] != $userId) {
+        $userIdToCheck = is_array($this->user) ? ($this->user['id'] ?? null) : ($this->user->id ?? null);
+        if ($userIdToCheck != $userId) {
             $this->jsonError(403, 'Access denied');
         }
     }

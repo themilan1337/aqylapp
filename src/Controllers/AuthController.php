@@ -250,10 +250,29 @@ class AuthController extends BaseController {
         $client->addScope('email');
 
         if (isset($_GET['code'])) {
-            $accessToken = $client->fetchAccessTokenWithAuthCode($_GET['code']);
-            $client->setAccessToken($accessToken);
-            $oauth2 = new \Google_Service_Oauth2($client);
-            $userInfo = $oauth2->userinfo->get();
+            try {
+                $accessToken = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+                
+                if (isset($accessToken['error'])) {
+                    error_log('OAuth error: ' . $accessToken['error_description']);
+                    header('Location: /auth/teacher/auth?error=oauth_failed');
+                    return;
+                }
+                
+                $client->setAccessToken($accessToken);
+                $oauth2 = new \Google_Service_Oauth2($client);
+                $userInfo = $oauth2->userinfo->get();
+                
+                if (!$userInfo->email || !$userInfo->name) {
+                    error_log('Incomplete user info from Google OAuth');
+                    header('Location: /auth/teacher/auth?error=incomplete_profile');
+                    return;
+                }
+            } catch (Exception $e) {
+                error_log('OAuth exception: ' . $e->getMessage());
+                header('Location: /auth/teacher/auth?error=oauth_exception');
+                return;
+            }
 
             $teacher = R::findOne('teachers', 'email = ?', [$userInfo->email]);
             if (!$teacher) {
@@ -261,6 +280,7 @@ class AuthController extends BaseController {
                 $teacher->name = $userInfo->name;
                 $teacher->email = $userInfo->email;
                 $teacher->picture = $userInfo->picture;
+                $teacher->school = '';
                 $teacher->join_date = date('Y-m-d H:i:s');
                 R::store($teacher);
 
@@ -363,10 +383,30 @@ class AuthController extends BaseController {
         $client->addScope('https://www.googleapis.com/auth/userinfo.email');
 
         if (isset($_GET['code'])) {
-            $accessToken = $client->fetchAccessTokenWithAuthCode($_GET['code']);
-            $client->setAccessToken($accessToken);
-            $oauth2 = new \Google_Service_Oauth2($client);
-            $userInfo = $oauth2->userinfo->get();
+            try {
+                $accessToken = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+                
+                if (isset($accessToken['error'])) {
+                    error_log('OAuth error: ' . $accessToken['error_description']);
+                    header('Location: /join/' . $_GET['invite_code'] . '?error=oauth_failed');
+                    return;
+                }
+                
+                $client->setAccessToken($accessToken);
+                $oauth2 = new \Google_Service_Oauth2($client);
+                $userInfo = $oauth2->userinfo->get();
+                
+                if (!$userInfo->email || !$userInfo->id) {
+                    error_log('Incomplete user info from Google OAuth');
+                    header('Location: /join/' . $_GET['invite_code'] . '?error=incomplete_profile');
+                    return;
+                }
+            } catch (Exception $e) {
+                error_log('OAuth exception: ' . $e->getMessage());
+                header('Location: /join/' . $_GET['invite_code'] . '?error=oauth_exception');
+                return;
+            }
+            
             $user = R::findOne('users', 'google_id = ?', [$userInfo->id]);
 
             if (!$user) {
@@ -481,10 +521,30 @@ class AuthController extends BaseController {
         $client->addScope('https://www.googleapis.com/auth/userinfo.email');
 
         if (isset($_GET['code'])) {
-            $accessToken = $client->fetchAccessTokenWithAuthCode($_GET['code']);
-            $client->setAccessToken($accessToken);
-            $oauth2 = new \Google_Service_Oauth2($client);
-            $userInfo = $oauth2->userinfo->get();
+            try {
+                $accessToken = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+                
+                if (isset($accessToken['error'])) {
+                    error_log('OAuth error: ' . $accessToken['error_description']);
+                    header('Location: /auth/signup?error=oauth_failed');
+                    return;
+                }
+                
+                $client->setAccessToken($accessToken);
+                $oauth2 = new \Google_Service_Oauth2($client);
+                $userInfo = $oauth2->userinfo->get();
+                
+                if (!$userInfo->email || !$userInfo->id) {
+                    error_log('Incomplete user info from Google OAuth');
+                    header('Location: /auth/signup?error=incomplete_profile');
+                    return;
+                }
+            } catch (Exception $e) {
+                error_log('OAuth exception: ' . $e->getMessage());
+                header('Location: /auth/signup?error=oauth_exception');
+                return;
+            }
+            
             $user = R::findOne('users', 'google_id = ?', [$userInfo->id]);
 
             if (!$user) {

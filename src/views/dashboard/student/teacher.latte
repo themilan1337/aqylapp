@@ -16,7 +16,7 @@
               <h2 class="text-xl font-semibold mb-4">Ваш учитель</h2>
               
               <div class="flex items-start space-x-4 mb-6">
-                <img src="{$teacher->picture}" alt="Teacher" class="w-16 h-16 object-cover rounded-full bg-gray-200">
+                <img src="{$teacher->picture|default:''}" alt="Teacher" class="w-16 h-16 object-cover rounded-full bg-gray-200">
                 <div>
                   <h3 class="text-lg font-semibold flex">
                     {$teacher->name}
