@@ -838,7 +838,7 @@ class HomeController extends BaseController {
                 COALESCE(SUM(progress.answered), 0) AS total_answered_questions
             FROM users
             LEFT JOIN progress ON users.id = progress.student_id
-            WHERE users.role = "student" AND users.token_confirmed = 1;
+            WHERE users.token_confirmed = 1;
         ', []);
 
 
