@@ -15,6 +15,11 @@ R::freeze(true);
 $latte = new Engine();
 $latte->setTempDirectory(__DIR__ . '/temp');
 
+// Register the 'default' filter
+$latte->addFilter('default', function ($value, $default = '') {
+    return $value !== null && $value !== '' ? $value : $default;
+});
+
 function render($template, $params = []) {
     global $latte;
     $latte->render(__DIR__ . "/views/$template.latte", $params);
